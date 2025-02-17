@@ -9,31 +9,17 @@ import org.junit.Test;
 
 public class TestPerformance {
 
-  // TODO run test and record running times for SIZE = 10, 100, 1000, 10000, ...
-  // (choose in conjunction with REPS below up to an upper limit where the clock
-  // running time is in the tens of seconds)
-  // TODO Question: What conclusions can you draw about the performance of LinkedList vs. ArrayList when
-  // comparing their running times for AddRemove vs. Access? Record those running times in README.txt!
-  // TODO (optional) refactor to DRY
-  // which of the two lists performs better as the size increases?
-  private final int SIZE = 10;
-
-  // TODO choose this value in such a way that you can observe an actual effect
-  // for increasing problem sizes
-  private final int REPS = 1000000;
+  // Testing with increasing sizes to observe performance trends
+  private final int[] SIZES = {10, 100, 1000, 10000, 100000}; // Adjust as needed
+  private final int REPS = 1000000; // Choose a reasonable number of repetitions
 
   private List<Integer> arrayList;
-
   private List<Integer> linkedList;
 
   @Before
   public void setUp() throws Exception {
-    arrayList = new ArrayList<Integer>(SIZE);
-    linkedList = new LinkedList<Integer>();
-    for (var i = 0; i < SIZE; i++) {
-      arrayList.add(i);
-      linkedList.add(i);
-    }
+    arrayList = new ArrayList<>();
+    linkedList = new LinkedList<>();
   }
 
   @After
@@ -42,35 +28,48 @@ public class TestPerformance {
     linkedList = null;
   }
 
-  @Test
-  public void testLinkedListAddRemove() {
-    for (var r = 0; r < REPS; r++) {
-      linkedList.add(0, 77);
-      linkedList.remove(0);
+  private void fillLists(int size) {
+    arrayList.clear();
+    linkedList.clear();
+    for (int i = 0; i < size; i++) {
+      arrayList.add(i);
+      linkedList.add(i);
     }
   }
 
   @Test
-  public void testArrayListAddRemove() {
-    for (var r = 0; r < REPS; r++) {
-      arrayList.add(0, 77);
-      arrayList.remove(0);
+  public void testPerformance() {
+    for (int size : SIZES) {
+      System.out.println("\nTesting with SIZE = " + size);
+      fillLists(size);
+
+      measurePerformance("ArrayList Add/Remove", () -> testAddRemove(arrayList));
+      measurePerformance("LinkedList Add/Remove", () -> testAddRemove(linkedList));
+
+      measurePerformance("ArrayList Access", () -> testAccess(arrayList, size));
+      measurePerformance("LinkedList Access", () -> testAccess(linkedList, size));
     }
   }
 
-  @Test
-  public void testLinkedListAccess() {
-    var sum = 0L;
-    for (var r = 0; r < REPS; r++) {
-      sum += linkedList.get(r % SIZE);
+  private void testAddRemove(List<Integer> list) {
+    for (int r = 0; r < REPS / list.size(); r++) { // Scale REPS based on size
+      list.add(0, 77);
+      list.remove(0);
     }
   }
 
-  @Test
-  public void testArrayListAccess() {
-    var sum = 0L;
-    for (var r = 0; r < REPS; r++) {
-      sum += arrayList.get(r % SIZE);
+  private void testAccess(List<Integer> list, int size) {
+    long sum = 0;
+    for (int r = 0; r < REPS / size; r++) { // Scale REPS based on size
+      sum += list.get(r % size);
     }
+  }
+
+  private void measurePerformance(String testName, Runnable test) {
+    long startTime = System.nanoTime();
+    test.run();
+    long endTime = System.nanoTime();
+    long elapsedTime = (endTime - startTime) / 1_000_000; // Convert to milliseconds
+    System.out.println(testName + " took " + elapsedTime + " ms");
   }
 }
